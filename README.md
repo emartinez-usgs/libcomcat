@@ -1,399 +1,145 @@
-Introduction
-------------
+[![codecov](https://codecov.io/gh/usgs/libcomcat/branch/master/graph/badge.svg)](https://codecov.io/gh/usgs/libcomcat)
 
-libcomcat is a project designed to provide command line equivalents to the ANSS ComCat search 
-<a href="http://comcat.cr.usgs.gov/fdsnws/event/1/">API</a>.  This code includes (so far):
- * Three scripts:
-   * getcomcat.py A script to download ComCat product contents (shakemap grids, origin quakeml, etc.)
-   * getcsv.py A script to generate csv or tab separated text files with basic earthquake information.
-   * getfixed.py A script to generate text files in one of two fixed-width formats: ISF and EHDF.
- * Two code modules, libcomcat/comcat.py, and libcomcat/fixed.py, with functions supporting the above scripts.
 
-Installation and Dependencies
------------------------------
+# Introduction
 
-This package depends on numpy, the fundamental package for scientific computing with Python.
-<a href="http://www.numpy.org/">http://www.numpy.org/</a>
 
-and neicmap and neicio, part of an effort at the NEIC to create generally useful Python libraries from
-the <a href="http://earthquake.usgs.gov/earthquakes/pager/">PAGER</a> source code.
+libcomcat is a project designed to provide a Python equivalent to the ANSS ComCat search 
+<a href="https://earthquake.usgs.gov/fdsnws/event/1/">API</a>.  This includes a Python library
+that provides various classes and functions wrapping around the ComCat API, and a number of command
+line programs that use those:
 
-The best way to install numpy is to use one of the Python distributions described here:
+ * `getproduct` Download ComCat product contents (shakemap grids, origin quakeml, etc.)
+ * `getcsv` Generate csv or Excel files with basic earthquake information.
+ * `getphases` Generate csv or Excel files with phase information.
+ * `findid` Find the ID of an event closest to input time/lat/lon parameters.
+ * `getmags` Download all available magnitudes from all sources.
 
-<a href="http://www.scipy.org/install.html">http://www.scipy.org/install.html</a>
 
-Anaconda and Enthought distributions have been successfully tested with libcomcat.
+# Installation and Dependencies
 
-Most of those distributions should include <em>pip</em>, a command line tool for installing and 
-managing Python packages.  You will use pip to install the other dependencies and libcomcat itself.  
- 
-You will also need to install *git*, a source code management tool, for your platform.
+## Mac, Windows, and Linux Users
 
-http://git-scm.com/downloads
+We recommend using either the Anaconda (https://docs.anaconda.com/anaconda/) or
+Miniconda (https://conda.io/miniconda.html) Python distributions.  These both use the
+conda packaging tool, which makes installation of dependencies much simpler. To install
+either of those packages, see the instructions on the web pages for each.
 
-You may need to open a new terminal window to ensure that the newly installed versions of python, pip and git
-are in your path.
+### Installing
 
-To install neicmap and neicio:
+libcomcat has been tested most often with Python 3.5, but *should*
+work with other Python 3.x versions. It will *not* work with Python
+2.7!  Fortunately, it is easy to install a 3.X version of Python within Anaconda:
 
-pip install git+git://github.com/usgs/neicmap.git
+`conda create -n comcat --channel conda-forge python=3.5`
 
-pip install git+git://github.com/usgs/neicio.git
+Then, in your Python 3.X environment do the following:
 
-To install this package:
+- `conda config --add channels conda-forge`
+- `conda install libcomcat`
 
-pip install git+git://github.com/usgs/libcomcat.git
-
-The last command will install getcomcat.py, getcsv.py, and getfixed.py in your path.  
-
-Uninstalling and Updating
--------------------------
+### Uninstalling and Updating
 
 To uninstall:
 
-pip uninstall libcomcat
+`conda remove libcomcat`
 
 To update:
 
-pip install -U git+git://github.com/usgs/libcomcat.git
-
-Application Programming Interface (API) Usage
------------------------------------------------------ 
-
-The library code will be installed in
-<PATH_TO_PYTHON>/lib/pythonX.Y/site-packages/libcomcat/.  Developers
-should be able to use the functions in comcat.py and fixed.py by
-importing them:
-
->>from libcomcat import comcat
-
->>from libcomcat import fixed
-
-You can browse the API documentation for these two modules here:
-
-<a href="http://usgs.github.io/libcomcat/">http://usgs.github.io/libcomcat/</a>.
-
-Usage for getcomcat.py
---------
-<pre>
-usage: getcomcat.py [-h] [-o OUTPUTFOLDER] [-b lonmin lonmax latmin latmax]
-                    [-s STARTTIME] [-e ENDTIME] [-m minmag maxmag]
-                    [-c CATALOG] [-n CONTRIBUTOR] [-i EVENTID]
-                    [-p PRODUCTPROPERTIES] [-t EVENTPROPERTIES] [-l]
-                    PRODUCT [CONTENTLIST [CONTENTLIST ...]]
-
-Download product files from USGS ComCat. To download ShakeMap grid.xml files
-for a box around New Zealand during 2013: getcomcat.py shakemap grid.xml -o
-/home/user/newzealand -b 163.213 -178.945 -48.980 -32.324 -s 2013-01-01 -e
-2014-01-01 Note that when specifying a search box that crosses the -180/180
-meridian, you simply specify longitudes as you would if you were not crossing
-that meridian.
-
-positional arguments:
-  PRODUCT               The name of the desired product (shakemap, dyfi, etc.)
-  CONTENTLIST           The names of the product contents (grid.xml,
-                        stationlist.txt, etc.)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -o OUTPUTFOLDER, --output-folder OUTPUTFOLDER
-                        Folder where output files should be written.
-  -b lonmin lonmax latmin latmax, --bounds lonmin lonmax latmin latmax
-                        Bounds to constrain event search [lonmin lonmax latmin
-                        latmax]
-  -s STARTTIME, --start-time STARTTIME
-                        Start time for search (defaults to ~30 days ago).
-                        YYYY-mm-dd or YYYY-mm-ddTHH:MM:SS
-  -e ENDTIME, --end-time ENDTIME
-                        End time for search (defaults to current date/time).
-                        YYYY-mm-dd or YYYY-mm-ddTHH:MM:SS
-  -m minmag maxmag, --mag-range minmag maxmag
-                        Min/max magnitude to restrict search.
-  -c CATALOG, --catalog CATALOG
-                        Source catalog from which products derive (atlas,
-                        centennial, etc.)
-  -n CONTRIBUTOR, --contributor CONTRIBUTOR
-                        Source contributor (who loaded product) (us, nc, etc.)
-  -i EVENTID, --event-id EVENTID
-                        Event ID from which to download product contents.
-  -p PRODUCTPROPERTIES, --product-property PRODUCTPROPERTIES
-                        Product property (reviewstatus:approved).
-  -t EVENTPROPERTIES, --event-property EVENTPROPERTIES
-                        Event property (alert:yellow, status:REVIEWED, etc.).
-  -l, --list-url        Only list urls for contents in events that match
-                        criteria.
-</pre>
-Usage for getcsv.py
---------
-<pre>
-usage: getcsv.py [-h] [-b lonmin lonmax latmin latmax] [-r lat lon rmin rmax]
-                 [-s STARTTIME] [-e ENDTIME] [-m minmag maxmag] [-c CATALOG]
-                 [-n CONTRIBUTOR] [-o]
-                 [-l {usmww,usmwb,usmwc,usmwr,gcmtmwc,cimwr,ncmwr}] [-a]
-                 [-f {csv,tab}] [-x] [-v]
-
-Download basic earthquake information in line format (csv, tab, etc.).
-
-    To download basic event information (time,lat,lon,depth,magnitude) and moment tensor components for a box around New Zealand
-    during 2013:
-
-    getcsv.py -o -b 163.213 -178.945 -48.980 -32.324 -s 2013-01-01 -e 2014-01-01 > nz.csv
-
-    To limit that search to only those events with a US Mww moment tensor solution:
-
-    getcsv.py -o -b 163.213 -178.945 -48.980 -32.324 -s 2013-01-01 -e 2014-01-01 -l usmww > nz.csv
-
-    To print the number of events that would be returned from the above query, and the maximum number of events supported
-    by ONE ComCat query*:
-
-    getcsv.py -x -o -b 163.213 -178.945 -48.980 -32.324 -s 2013-01-01 -e 2014-01-01
-
-    Events which do not have a value for a given field (moment tensor components, for example), will have the string "nan" instead.
-
-    Note that when specifying a search box that crosses the -180/180 meridian, you simply specify longitudes
-    as you would if you were not crossing that meridian (i.e., lonmin=179, lonmax=-179).  The program will resolve the
-    discrepancy.
-
-    
-    *Queries that exceed this ComCat limit ARE supported by this software, by breaking up one large request into a number of 
-    smaller ones.  However, large queries, when also configured to retrieve moment tensor parameters, nodal plane angles, or
-    moment tensor type can take a very long time to download.  The author has tested queries just over 20,000 events, and it
-    can take ~90 minutes to complete.  This delay is caused by the fact that when this program has to retrieve moment tensor 
-    parameters, nodal plane angles, or moment tensor type, it must open a URL for EACH event and parse the data it finds.  
-    If these parameters are not requested, then the same request will return in much less time (~10 minutes or less for a 
-    20,000 event query).
-    
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -b lonmin lonmax latmin latmax, --bounds lonmin lonmax latmin latmax
-                        Bounds to constrain event search [lonmin lonmax latmin
-                        latmax]
-  -r lat lon rmin rmax, --radius lat lon rmin rmax
-                        Min/max search radius in KM (use instead of bounding
-                        box)
-  -s STARTTIME, --start-time STARTTIME
-                        Start time for search (defaults to ~30 days ago).
-                        YYYY-mm-dd or YYYY-mm-ddTHH:MM:SS
-  -e ENDTIME, --end-time ENDTIME
-                        End time for search (defaults to current date/time).
-                        YYYY-mm-dd or YYYY-mm-ddTHH:MM:SS
-  -m minmag maxmag, --mag-range minmag maxmag
-                        Min/max magnitude to restrict search.
-  -c CATALOG, --catalog CATALOG
-                        Source catalog from which products derive (atlas,
-                        centennial, etc.)
-  -n CONTRIBUTOR, --contributor CONTRIBUTOR
-                        Source contributor (who loaded product) (us, nc, etc.)
-  -o, --get-moment-components
-                        Also extract moment-tensor components (including type
-                        and derived hypocenter) where available.
-  -l {usmww,usmwb,usmwc,usmwr,gcmtmwc,cimwr,ncmwr}, --limit-type {usmww,usmwb,usmwc,usmwr,gcmtmwc,cimwr,ncmwr}
-                        Only extract moment-tensor components from given type.
-  -a, --get-focal-angles
-                        Also extract focal-mechanism angles (strike,dip,rake)
-                        where available.
-  -f {csv,tab}, --format {csv,tab}
-                        Output format
-  -x, --count           Just return the number of events in search and maximum
-                        allowed.
-  -v, --verbose         Print progress
-</pre>
-
-Usage for getfixed.py
---------
-<pre>
-usage: getfixed.py [-h] [-b lonmin lonmax latmin latmax]
-                   [-r lat lon rmin rmax] [-s STARTTIME] [-e ENDTIME]
-                   [-m minmag maxmag] [-c CATALOG] [-n CONTRIBUTOR]
-                   [-i EVENTID]
-                   {isf,ehdf}
-
-Download earthquake information in a fixed-width (ISF or EHDF) format.
-
-    Retrieving many events:
-
-    getfixed.py isf -b -105.010 -104.090 37.049 37.475 -s 2014-01-01 -e 2014-01-24 > southern_colorado.isf
-
-      
-    This should print (to stderr) the ids of the events found in the search box, and then print (to stdout)
-    the results in ISF format.
-
-    Doing a radius search for multiple events:
-    
-    getfixed.py isf -r 35.786 -97.475 10 30 -s 2014-01-01 -e 2014-02-18 > oklahoma.isf
-
-    Retrieving a single event:
-
-    getfixed.py isf -i usb000m4lb > usb000m4lb.isf
-
-    To retrieve events using a search box that spans the -180/180 meridian, simply specify longitudes
-    as you would if you were not crossing that meridian:
-
-    ./getfixed.py isf -b 177.605 -175.83 49.86 53.593 -s 2014-01-01 -e 2014-01-24 > aleutians.isf
-
-    You can repeat these procedures for the EHDF format.
-
-    The ISF format is described here:
-    http://www.isc.ac.uk/standards/isf/
-
-    The EHDF format is described here:
-    ftp://hazards.cr.usgs.gov/weekly/ehdf.txt
-    
-
-positional arguments:
-  {isf,ehdf}            Output data in ISF format
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -b lonmin lonmax latmin latmax, --bounds lonmin lonmax latmin latmax
-                        Bounds to constrain event search [lonmin lonmax latmin
-                        latmax]
-  -r lat lon rmin rmax, --radius lat lon rmin rmax
-                        Min/max search radius in KM (use instead of bounding
-                        box)
-  -s STARTTIME, --start-time STARTTIME
-                        Start time for search (defaults to ~30 days ago).
-                        YYYY-mm-dd or YYYY-mm-ddTHH:MM:SS
-  -e ENDTIME, --end-time ENDTIME
-                        End time for search (defaults to current date/time).
-                        YYYY-mm-dd or YYYY-mm-ddTHH:MM:SS
-  -m minmag maxmag, --mag-range minmag maxmag
-                        Min/max magnitude to restrict search.
-  -c CATALOG, --catalog CATALOG
-                        Source catalog from which products derive (atlas,
-                        centennial, etc.)
-  -n CONTRIBUTOR, --contributor CONTRIBUTOR
-                        Source contributor (who loaded product) (us, nc, etc.)
-  -i EVENTID, --id EVENTID
-                        Output data in EHDF format
-</pre>
-
-Usage for findid.py:
-<pre>
-usage: findid.py [-h] [-p time lat lon] [-r RADIUS] [-w WINDOW] [-f FILE] [-a]
-                 [-u] [-v]
-
-Find the id(s) of the closest earthquake to input parameters. 
-
-    To print the authoritative id of the event closest in time and space inside a 100 km, 16 second window to "2015-03-29T23:48:31,-4.763,152.561":
-
-    findid.py -p 2015-03-29T23:48:31 -4.763 152.561
-
-    To repeat that query but with a custom distance/time window of 50km and 5 seconds:
-
-    findid.py -r 50 -w 5 -p 2015-03-29T23:48:31 -4.763 152.561
-
-    To print the authoritative id of the event closest in time and space to "2015-03-29T23:48:31,-4.763,152.561" AND
-    the url of said event:
-
-    findid.py -u -p 2015-03-29T23:48:31 -4.763 152.561
-
-    To print all of the ids associated with the event closest to above:
-
-    findid.py -a -p 2015-03-29T23:48:31 -4.763 152.561
-
-    To print the id(s), time/distance deltas, and azimuth from input to nearest event:
-
-    findid.py -v -p 2015-03-29T23:48:31 -4.763 152.561
-
-    To find the ids for events found in a CSV file (time,lat,lon,...):
-    (Create a file by doing the following: getcsv.py -s 2015-04-07 -e 2015-04-08T15:00:00 -m 4.0 5.5 | cut -f2,3,4,5,6,7 -d',' > eventlist.csv)
-    ./findid.py -f eventlist.csv
-    Output will be the input CSV data, with id added as the first column.
-
-    If -u option is supplied, the url will be the second column.
-
-    Notes:
-     - The time format at the command line must be of the form "YYYY-MM-DDTHH:MM:SS".  The time format in an input csv file
-     can be either :YYYY-MM-DDTHH:MM:SS" OR "YYYY-MM-DD HH:MM:SS".  This is because on the command line the argument parser 
-     would be confused by the space between the date and the time, whereas in the csv file the input files are being split
-     by commas.
-     - Supplying the -a option with the -f option has no effect.
-    
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -p time lat lon, --params time lat lon
-                        Input time, lat and lon to use for search.
-  -r RADIUS, --radius RADIUS
-                        Change search radius from default of 100 km.
-  -w WINDOW, --window WINDOW
-                        Change time window of 16 seconds.
-  -f FILE, --file FILE  Parse time,lat,lon from input csv file, which can have
-                        a header row but must have time,lat,lon as first three
-                        columns. Time format can be either YYYY-MM-DDTHH:MM:SS
-                        OR YYYY-MM-DD HH:MM:SS. Output will have an "id"
-                        column prepended, and a "url" column second (if -u
-                        option selected), followed by the input columns of
-                        data.
-  -a, --all             Print all ids associated with event.
-  -u, --url             Print URL associated with event.
-  -v, --verbose         Print time/distance deltas, and azimuth from input
-                        parameters to event.
-</pre>
-
-Usage for getellipse.py:
-<pre>
-usage: getellipse.py [-h] [-t alen blen clen azimuth plunge rotation]
-                     [-r AAzim APlunge ALen BAzim BPlunge BLen CAzim CPlunge CLen]
-                     [-q alen blen clen azimuth plunge rotation ndef stderr isfixed]
-                     [-m AAzim APlunge ALen BAzim BPlunge BLen CAzim CPlunge CLen ndef stderr isfixed]
-
-Convert between various representation of earthquake error ellipse.
-
-    Tait-Bryan (QuakeML) representation to 3x3 matrix representation:
-
-    getellipse.py -t 16.0 6.1 10.9 139.0 6.0 88.9075
-
-    --------------------------------------------------------------
-    SemiMajorAxis       : Azimuth 139.0 Plunge   6.0 Length  16.0
-    SemiMinorAxis       : Azimuth 308.7 Plunge  83.9 Length   6.1
-    SemiIntermediateAxis: Azimuth  48.9 Plunge   1.1 Length  10.9 
-    -------------------------------------------------------------- 
-
-    Tait-Bryan (QuakeML) representation to surface projection:
-
-    getellipse.py -q 16.0 6.1 10.9 139.0 6.0 88.9075 95 0.76 0
-
-    -------------------------------------------------------
-    Surface Ellipse: Major:  13.7 Minor   9.4 Azimuth 319.1  
-    -------------------------------------------------------
-
-    3x3 Matrix representation to surface projection:
-
-    getellipse.py -m 139.0 6.0 16.0 308.7 83.9 6.1 48.9 1.1 10.9 95 0.76 0
-
-    -------------------------------------------------------
-    Surface Ellipse: Major:  13.7 Minor   9.4 Azimuth 319.1
-    -------------------------------------------------------
-    
-    3x3 matrix representation to Tait-Bryan (QuakeML) representation:
-
-    getellipse.py -r 139.0 6.0 16.0 308.7 83.9 6.1 48.9 1.1 10.9
-
-    -----------------------------------------------------------------------------
-    SemiMajor Axis       : Azimuth 139.0 Plunge   6.0 Rotation  88.9 Length  16.0
-    SemiMinor Axis       : Azimuth   nan Plunge   nan Rotation   nan Length   6.1
-    SemiIntermediate Axis: Azimuth   nan Plunge   nan Rotation   nan Length  10.9
-    -----------------------------------------------------------------------------
-    
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -t alen blen clen azimuth plunge rotation, --tait2matrix alen blen clen azimuth plunge rotation
-                        Convert Tait-Bryan error ellipse to 3x3 matrix
-  -r AAzim APlunge ALen BAzim BPlunge BLen CAzim CPlunge CLen, --matrix2tait AAzim APlunge ALen BAzim BPlunge BLen CAzim CPlunge CLen
-                        Convert 3x3 matrix error ellipse to Tait-Bryan
-                        representation
-  -q alen blen clen azimuth plunge rotation ndef stderr isfixed, --tait2surface alen blen clen azimuth plunge rotation ndef stderr isfixed
-                        Project Tait-Bryan error ellipse to surface
-  -m AAzim APlunge ALen BAzim BPlunge BLen CAzim CPlunge CLen ndef stderr isfixed, --matrix2surface AAzim APlunge ALen BAzim BPlunge BLen CAzim CPlunge CLen ndef stderr isfixed
-                        Project 3x3 matrix error ellipse to surface
-</pre>
-
-libcomcat API for Developers
-----------------------------
-The functions that are most likely of interest to developers are in 
-<a href="html/index.html">libcomcat/comcat</a>
+`conda update libcomcat`
+
+
+####For Windows Users
+
+To run (for example) the command line program *getcsv*, which is
+described in the documentation, do the following:
+
+ `where getcsv`
+
+This will print out the full path to the getcsv program in your root environment, something like "C:\Users\username\AppData\Anaconda3\getcsv".  Copy this path using Ctrl-C and paste it into another command:
+
+`python C:\Users\username\AppData\Anaconda3\getcsv --help`
+
+to see the help for the *getcsv* command.  The author is not a Windows
+user, and recognizes that this seems like an unwieldy way to run a
+script.  Anyone who regularly does Python scripting in a Windows
+environment who has advice to make this usage more like Linux or Mac
+(i.e., `getcsv --help`), please submit an issue in this repository.
+
+# Documentation
+
+API and command line documentation can be found here:
+
+http://usgs.github.io/libcomcat/
+
+Sample API usage can be found in the notebook:
+
+https://github.com/usgs/libcomcat/blob/master/notebooks/libcomcat_examples.ipynb
+
+
+# Phase Data:
+
+If you work in Python, you can use the read_phases() function that comes with libcomcat.
+
+> from libcomcat.utils import read_phases
+
+> event,phases = read_phases('us2000b3dm_phases.csv')
+
+This function reads either CSV or Excel.
+
+If you work in Matlab, we have provided a function, at the top level
+of this repository, to read the CSV files.  To use it in your Matlab
+environment, put the read_phases.m file in your Matlab path.  Below is
+the help text for the function.
+
+> read_phases  Read event and phase data from CSV files created by libcomcat getphases program.
+> 
+>   libcomcat is a set of tools available on GitHub for downloading various
+>   types of data from the USGS earthquake Comprehensive Catalog, or ComCat.
+>   getphases is one of those tools, and is documented here:
+> 
+>   http://usgs.github.io/libcomcat/programs/getphases.html
+>  
+>   (at command line) getphases . -i us2000b3dm --format=csv
+>   [event,phases] = read_phases('./us2000b3dm_phases.csv') returns an
+>   event structure, which consists of the following fields:
+>    - id: USGS authoritative ComCat ID.
+>    - time: Matlab datenum representing origin time.
+>    - location: String describing location of the earthquake.
+>    - latitude: Origin latitude.
+>    - longitude: Origin longitude.
+>    - depth: Origin depth.
+>    - magnitude: Event magnitude.
+>    - magtype: Magnitude type.
+>    - url: ComCat URL where earthquake information can be found.
+>    - Any remaining fields will contain moment tensor data, if available.
+>      These fields will be preceded by moment tensor source and method.
+>      For example, a moment tensor created by the NEIC using the W-phase
+>      algorithm will have the following fields:
+>      - us_Mww_mrr: Mrr moment tensor component.
+>      - us_Mww_mtt: Mtt moment tensor component.
+>      - us_Mww_mpp: Mpp moment tensor component.
+>      - us_Mww_mrt: Mrt moment tensor component.
+>      - us_Mww_mrp: Mrp moment tensor component.
+>      - us_Mww_mtp: Mtp moment tensor component.
+>      - us_Mww_np1_strike: Strike of the first nodal plane.
+>      - us_Mww_np1_dip: Dip of the first nodal plane.
+>      - us_Mww_np1_rake: Rake of the first nodal plane.
+>      - us_Mww_np2_strike: Strike of the second nodal plane.
+>      - us_Mww_np2_dip: Dip of the second nodal plane.
+>      - us_Mww_np2_rake: Rake of the second nodal plane.
+>  
+>   and a Matlab table object, where rows consist of phase data
+>   and columns are the following:
+>    - Channel Network.Station.Channel.Location (NSCL) style station description.
+>      ( '-'  indicates missing information)
+>    - Distance Distance (kilometers) from epicenter to station.
+>    - Azimuth Azimuth (degrees) from epicenter to station.
+>    - Phase Name of the phase (Pn,Pg, etc.)
+>    - ArrivalTime Pick arrival time (UTC).
+>    - Status 'manual' or 'automatic'.
+>    - Residual Arrival time residual.
+>    - Weight Arrival weight.
+
+
 
